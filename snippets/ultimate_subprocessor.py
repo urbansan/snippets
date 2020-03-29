@@ -1,6 +1,7 @@
 from multiprocessing import Pipe
 from threading import Thread, current_thread
 import subprocess
+import sys
 
 cmds = [
     'sleep 3',
@@ -11,42 +12,42 @@ cmds = [
 ]
 
 class Processor:
-    def __init__(self):
+    def __init__(self, debug=False):
         self._in, self._out = Pipe()
+        self.debug = debug
         self.threads = {}
 
     def start(self, cmds, proc_count):
         current_proc_count = 0
         for cmd in cmds:
-
             if current_proc_count < proc_count:
                 current_proc_count += 1
-                self.start_subprocess(cmd)
+                self._start_subprocess(cmd)
             else:
-                self.cleanup_subprocess()
-                self.start_subprocess(cmd)
+                self._cleanup_subprocess()
+                self._start_subprocess(cmd)
 
         for _ in range(current_proc_count):
-            self.cleanup_subprocess()
+            self._cleanup_subprocess()
 
         print('Happy finish:)')
 
-    def start_subprocess(self, cmd):
+    def _start_subprocess(self, cmd):
         th = Thread(target=self._threaded_subprocess, args=(cmd,))
         self.threads[th.name] = th
         th.start()
 
-    def cleanup_subprocess(self):
+    def _cleanup_subprocess(self):
         th_name, returncode, exception = self._out.recv()
-        print(f'Recieved thread "{th_name}" with return code "{returncode}", exception "{exception}"')
+        if self.debug:
+            print(f'Recieved thread "{th_name}" with return code'
+                  f' "{returncode}", exception "{exception}"', file=sys.stderr)
         self.threads[th_name].join()
-
 
     def _threaded_subprocess(self, cmd):
         th = current_thread()
         try:
-            print(f'Running cmd "{cmd}" in thread "{th.name}"')
-            # 10/0
+            print(f'Running cmd "{cmd}" in thread "{th.name}"', file=sys.stderr)
             p = subprocess.run(cmd.split())
             self._in.send((th.name, p.returncode, None))
         except Exception as e:
