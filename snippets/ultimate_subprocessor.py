@@ -13,7 +13,7 @@ cmds = [
 
 class Processor:
     def __init__(self, debug=False):
-        self._in, self._out = Pipe()
+        self._pipe_out, self._pipe_in = Pipe(duplex=False)
         self.debug = debug
         self.threads = {}
 
@@ -42,7 +42,7 @@ class Processor:
         th.start()
 
     def _cleanup_subprocess(self):
-        th_name, returncode, exception = self._out.recv()
+        th_name, returncode, exception = self._pipe_out.recv()
         self._log(f'Recieved thread "{th_name}" with return code'
                   f' "{returncode}", exception "{exception}"')
         self.threads[th_name].join()
@@ -52,9 +52,9 @@ class Processor:
         try:
             self._log(f'Running cmd "{cmd}" in thread "{th.name}"')
             p = subprocess.run(cmd.split())
-            self._in.send((th.name, p.returncode, None))
+            self._pipe_in.send((th.name, p.returncode, None))
         except Exception as e:
-            self._in.send((th.name, -100, str(e)))
+            self._pipe_in.send((th.name, -100, str(e)))
 
 
 if __name__ == '__main__':
