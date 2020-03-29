@@ -30,8 +30,11 @@ class Processor:
         for _ in range(current_proc_count):
             self._cleanup_subprocess()
 
+        self._log('Happy finish:)')
+
+    def _log(self, *args):
         if self.debug:
-            print('Happy finish:)', file=sys.stderr)
+            print(*args, file=sys.stderr)
 
     def _start_subprocess(self, cmd):
         th = Thread(target=self._threaded_subprocess, args=(cmd,))
@@ -40,16 +43,14 @@ class Processor:
 
     def _cleanup_subprocess(self):
         th_name, returncode, exception = self._out.recv()
-        if self.debug:
-            print(f'Recieved thread "{th_name}" with return code'
-                  f' "{returncode}", exception "{exception}"', file=sys.stderr)
+        self._log(f'Recieved thread "{th_name}" with return code'
+                  f' "{returncode}", exception "{exception}"')
         self.threads[th_name].join()
 
     def _threaded_subprocess(self, cmd):
         th = current_thread()
         try:
-            if self.debug:
-                print(f'Running cmd "{cmd}" in thread "{th.name}"', file=sys.stderr)
+            self._log(f'Running cmd "{cmd}" in thread "{th.name}"')
             p = subprocess.run(cmd.split())
             self._in.send((th.name, p.returncode, None))
         except Exception as e:
