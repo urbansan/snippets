@@ -1,15 +1,8 @@
+import sys
+import subprocess
 from multiprocessing import Pipe
 from threading import Thread, current_thread
-import subprocess
-import sys
 
-cmds = [
-    'sleep 3',
-    'sleep 3',
-    'sleep 5',
-    'sleep 5',
-    'sleep 5'
-]
 
 class Processor:
     def __init__(self, debug=False):
@@ -58,5 +51,13 @@ class Processor:
 
 
 if __name__ == '__main__':
-     p = Processor(debug=True)
-     p.start(cmds, 4)
+    cmds = [
+        'sleep 3',
+        'sleep 3',
+        'sleep 5',
+        'sleep 5',
+        'sleep 5'
+    ]
+
+    p = Processor(debug=True)
+    p.start(cmds, 4)
